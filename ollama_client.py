@@ -1,0 +1,74 @@
+import base64
+import json
+from typing import Optional, Tuple
+
+import requests
+
+
+class OllamaVisionClient:
+    def __init__(self, base_url: str = "http://localhost:11434", timeout: int = 120):
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    def analyze_image(
+        self,
+        model: str,
+        prompt: str,
+        image_bytes: bytes,
+        structured_output: bool = False,
+    ) -> Tuple[str, Optional[dict]]:
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+        final_prompt = prompt.strip()
+        if structured_output:
+            final_prompt += (
+                "\n\nReturn JSON only with the following keys: "
+                "scene_status, amr_count, worker_present, pallet_detected, "
+                "blocked_path, hazard_level, summary."
+            )
+
+        payload = {
+            "model": model,
+            "stream": False,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": final_prompt,
+                    "images": [image_b64],
+                }
+            ],
+        }
+
+        response = requests.post(
+            f"{self.base_url}/api/chat",
+            json=payload,
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+
+        data = response.json()
+        message = data.get("message", {})
+        content = (message.get("content") or "").strip()
+
+        if not content:
+            return "No response returned from Ollama.", None
+
+        if structured_output:
+            try:
+                parsed = json.loads(content)
+                summary = parsed.get("summary") or json.dumps(parsed, indent=2)
+                return summary, parsed
+            except Exception:
+                return content, None
+
+        return content, None
+
+    def health_check(self) -> Optional[dict]:
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            return None
+
+

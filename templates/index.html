@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyundai Local VLM Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="header">
+    <div>
+      <h1>Hyundai Local VLM Dashboard</h1>
+      <p class="subtitle">Phase 2 • RTSP + Ollama + Metrics + Logs + Structured Output</p>
+    </div>
+    <div id="statusBadge" class="badge idle">Idle</div>
+  </header>
+
+  <main class="container">
+    <section class="panel left">
+      <h2>Controls</h2>
+
+      <label>RTSP URL</label>
+      <input id="rtspUrl" type="text" placeholder="rtsp://..." />
+
+      <label>Prompt</label>
+      <textarea id="promptInput">Analyze this factory scene. Focus on AMR congestion, pallet blockage, worker presence, and operational hazards. Keep the answer concise.</textarea>
+
+      <label>Model</label>
+      <select id="modelSelect">
+        <option value="llama3.2-vision:11b">llama3.2-vision:11b</option>
+        <option value="gemma3:4b">gemma3:4b</option>
+      </select>
+
+      <label>Frame Interval (seconds)</label>
+      <input id="frameInterval" type="number" min="0.5" step="0.5" value="2.0" />
+
+      <label class="checkboxRow">
+        <input id="structuredOutput" type="checkbox" />
+        <span>Structured JSON Output</span>
+      </label>
+
+      <div class="buttonRow">
+        <button id="startBtn" class="primary">Start Analysis</button>
+        <button id="stopBtn" class="secondary">Stop Analysis</button>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <div class="statsGrid">
+        <div class="statCard">
+          <div class="statLabel">CPU</div>
+          <div id="cpuStat" class="statValue">0%</div>
+        </div>
+        <div class="statCard">
+          <div class="statLabel">RAM</div>
+          <div id="ramStat" class="statValue">0%</div>
+        </div>
+      </div>
+
+      <h2>System Status</h2>
+      <div id="statusText" class="statusText">System idle.</div>
+
+      <h2>Latest VLM Response</h2>
+      <div id="responseBox" class="responseBox">Waiting for analysis...</div>
+
+      <h2>Structured Output</h2>
+      <pre id="structuredBox" class="structuredBox">No structured output yet.</pre>
+
+      <div class="metaRow">
+        <span>Last update:</span>
+        <span id="lastUpdate">—</span>
+      </div>
+
+      <div class="metaRow">
+        <span>Last error:</span>
+        <span id="lastError">—</span>
+      </div>
+
+      <h2>Rolling Log</h2>
+      <div id="logBox" class="logBox"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+
+
