@@ -44,6 +44,11 @@ class OllamaVisionClient:
             json=payload,
             timeout=self.timeout,
         )
+
+        if not response.ok:
+            raise Exception(f"LOL LOOK AT TS: {response.status_code}: {response.text}")
+        data = response.json()
+
         response.raise_for_status()
 
         data = response.json()
