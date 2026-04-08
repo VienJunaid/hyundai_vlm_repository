@@ -2,12 +2,15 @@ import asyncio
 from collections import deque
 from datetime import datetime
 from typing import Deque, Set
-
+from threading import Lock
+from fastapi.responses import StreamingResponse
 import psutil
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+import time
 
 from ollama_client import OllamaVisionClient
 from rtsp_worker import RTSPAnalysisWorker, WorkerConfig
@@ -39,6 +42,15 @@ state = {
 
 ollama = OllamaVisionClient()
 main_loop = None
+
+latest_frame = None
+frame_lock = Lock()
+
+def handle_frame(frame_bytes: bytes):
+    global latest_frame
+    with frame_lock:
+        latest_frame = frame_bytes
+
 
 
 def iso_now() -> str:
@@ -128,6 +140,7 @@ worker = RTSPAnalysisWorker(
     on_status=handle_status,
     on_error=handle_error,
     on_log=add_log,
+    on_frame=handle_frame,
 )
 
 
@@ -264,4 +277,35 @@ async def metrics_loop():
         })
         await asyncio.sleep(2)
 
+
+
+@app.get("/api/video_feed")
+async def video_feed():
+    with frame_lock:
+        has_frame = latest_frame is not None
+
+    if not has_frame:
+        return JSONResponse(
+            {"ok": False, "error": "No video frame available yet. Start RTSP analysis first."},
+            status_code=503,
+        )
+
+    return StreamingResponse(
+        mjpeg_generator(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+def mjpeg_generator():
+    while True:
+        with frame_lock:
+            frame = latest_frame
+
+        if frame is not None:
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+            )
+
+        time.sleep(0.08)
 

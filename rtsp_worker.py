@@ -25,12 +25,14 @@ class RTSPAnalysisWorker:
         on_status: Callable[[dict], None],
         on_error: Callable[[str], None],
         on_log: Callable[[str], None],
+        on_frame: Optional[Callable[[bytes], None]] = None,
     ):
         self.ollama_client = ollama_client
         self.on_result = on_result
         self.on_status = on_status
         self.on_error = on_error
         self.on_log = on_log
+        self.on_frame = on_frame
 
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
@@ -99,6 +101,10 @@ class RTSPAnalysisWorker:
                     time.sleep(1.0)
                     continue
 
+                ok_live, encoded_live = cv2.imencode(".jpg", frame)
+                if ok_live and self.on_frame:
+                    self.on_frame(encoded_live.tobytes())
+
                 now = time.time()
                 if now - last_sent_time < cfg.frame_interval:
                     time.sleep(0.05)
@@ -141,5 +147,3 @@ class RTSPAnalysisWorker:
                 "text": "Analysis stopped."
             })
             self.on_log("RTSP worker stopped and camera released.")
-
-

@@ -5,12 +5,69 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hyundai Local VLM Dashboard</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    .connectionRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .liveDot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      background: #6b7280;
+      box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.5);
+    }
+
+    .liveDot.live {
+      background: #22c55e;
+      box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
+    }
+
+    .liveDot.reconnecting {
+      background: #f59e0b;
+      box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15);
+    }
+
+    .liveDot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
+    }
+
+    .logHeaderRow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .logMeta {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .logBox {
+      max-height: 320px;
+      min-height: 220px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
 </head>
 <body>
   <header class="header">
     <div>
       <h1>Hyundai Local VLM Dashboard</h1>
       <p class="subtitle">Phase 2 • RTSP + Ollama + Metrics + Logs + Structured Output</p>
+      
     </div>
     <div id="statusBadge" class="badge idle">Idle</div>
   </header>
@@ -43,7 +100,7 @@
         <button id="startBtn" class="primary">Start Analysis</button>
         <button id="stopBtn" class="secondary">Stop Analysis</button>
       </div>
-      <!-- Test Mission Abort Button: Will put it in a div at the bottom -->
+
       <div class="second-buttonRow">
         <button 
         class="primary"
@@ -68,7 +125,24 @@
       <div id="statusText" class="statusText">System idle.</div>
 
       <h2>Latest VLM Response</h2>
+
+      
+
       <div id="responseBox" class="responseBox">Waiting for analysis...</div>
+
+      <!-- RTSP Footage Playback -->
+      <h2>Live RTSP Feed</h2>
+      <div class="videoPanel">
+        <div id="videoPlaceholder" class="statusText">No RTSP source loaded.</div>
+        <img
+          id="videoFeed"
+          src=""
+          alt="Live RTSP Feed"
+          style="display:none; width:100%; border-radius:12px; border:1px solid #2a2f3a;"
+        />
+      </div>
+
+
 
       <h2>Structured Output</h2>
       <pre id="structuredBox" class="structuredBox">No structured output yet.</pre>
@@ -83,7 +157,10 @@
         <span id="lastError">—</span>
       </div>
 
-      <h2>Rolling Log</h2>
+      <div class="logHeaderRow">
+        <h2>Rolling Log</h2>
+        <div id="logMeta" class="logMeta">Newest first • 0 entries shown</div>
+      </div>
       <div id="logBox" class="logBox"></div>
     </section>
   </main>
@@ -91,5 +168,3 @@
   <script src="/static/app.js"></script>
 </body>
 </html>
-
-
