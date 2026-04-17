@@ -1,8 +1,17 @@
 import base64
 import json
+import re
 from typing import Optional, Tuple
 
 import requests
+
+SYSTEM_ANALYSIS_PROMPT = (
+    "You are a factory floor safety monitor. Analyze this image carefully. "
+    "Respond ONLY with valid JSON and no other text, using this exact format: "
+    "{\"amr_count\": 0, \"congestion\": false, \"reason\": \"brief one-sentence explanation\"}. "
+    "Count all AMRs, forklifts, or automated vehicles visible. "
+    "Set congestion to true if any vehicles appear blocked, clustered together, or unable to move freely."
+)
 
 
 class OllamaVisionClient:
@@ -46,10 +55,7 @@ class OllamaVisionClient:
         )
 
         if not response.ok:
-            raise Exception(f"LOL LOOK AT TS: {response.status_code}: {response.text}")
-        data = response.json()
-
-        response.raise_for_status()
+            raise Exception(f"Ollama error {response.status_code}: {response.text}")
 
         data = response.json()
         message = data.get("message", {})
@@ -67,6 +73,21 @@ class OllamaVisionClient:
                 return content, None
 
         return content, None
+
+    def analyze_system_prompt(self, model: str, image_bytes: bytes) -> dict:
+        """Runs the hardcoded system analysis prompt and returns a parsed dict."""
+        text, _ = self.analyze_image(model, SYSTEM_ANALYSIS_PROMPT, image_bytes)
+        try:
+            return json.loads(text)
+        except Exception:
+            pass
+        match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except Exception:
+                pass
+        return {"amr_count": 0, "congestion": False, "reason": text}
 
     def health_check(self) -> Optional[dict]:
         try:

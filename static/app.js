@@ -8,6 +8,7 @@ const stopBtn = document.getElementById("stopBtn");
 
 const statusBadge = document.getElementById("statusBadge");
 const connectionBadge = document.getElementById("connectionBadge");
+const liveDot = document.getElementById("liveDot");
 const statusText = document.getElementById("statusText");
 const responseBox = document.getElementById("responseBox");
 const structuredBox = document.getElementById("structuredBox");
@@ -21,14 +22,61 @@ const logMeta = document.getElementById("logMeta");
 const amrList = document.getElementById("amrList");
 const globalStopMissionBtn = document.getElementById("globalStopMissionBtn");
 
+const fleetTotalBadge = document.getElementById("fleetTotalBadge");
+const fleetActiveCount = document.getElementById("fleetActiveCount");
+const fleetDelayedCount = document.getElementById("fleetDelayedCount");
+const fleetIdleCount = document.getElementById("fleetIdleCount");
+const fleetMissionCount = document.getElementById("fleetMissionCount");
+
+const demoAmrId = document.getElementById("demoAmrId");
+const demoMissionId = document.getElementById("demoMissionId");
+const demoAmrStatus = document.getElementById("demoAmrStatus");
+const demoAmrLocation = document.getElementById("demoAmrLocation");
+const demoAmrBattery = document.getElementById("demoAmrBattery");
+const addDemoAmrBtn = document.getElementById("addDemoAmrBtn");
+const clearDemoAmrsBtn = document.getElementById("clearDemoAmrsBtn");
+
 const videoFeed = document.getElementById("videoFeed");
 const videoPlaceholder = document.getElementById("videoPlaceholder");
+
+const congestionAlert = document.getElementById("congestionAlert");
+const congestionAlertText = document.getElementById("congestionAlertText");
+const sysAmrCount = document.getElementById("sysAmrCount");
+const sysCongestionStatus = document.getElementById("sysCongestionStatus");
+const sysReasonBox = document.getElementById("sysReasonBox");
 
 let socket = null;
 let reconnectTimer = null;
 let visibleLogEntries = [];
+let backendAmrs = [];
+let demoAmrs = [
+  {
+    id: "AMR-01",
+    status: "Active",
+    mission: "Mission M-1007 • Transporting pallet to outbound lane",
+    location: "Pickup A3",
+    battery: 84,
+    source: "demo"
+  },
+  {
+    id: "AMR-04",
+    status: "Charging",
+    mission: "Mission queue paused • Awaiting recharge completion",
+    location: "Dock Station 2",
+    battery: 22,
+    source: "demo"
+  },
+  {
+    id: "AMR-08",
+    status: "Delayed",
+    mission: "Mission M-1015 • Congestion near crossing and pallet merge point",
+    location: "Lane C",
+    battery: 61,
+    source: "demo"
+  }
+];
+
 const MAX_VISIBLE_LOGS = 80;
-const STREAM_REFRESH_MS = 1000;
 
 injectGlowStyles();
 
@@ -39,7 +87,7 @@ function injectGlowStyles() {
   style.id = "live-update-glow-styles";
   style.textContent = `
     .flash-update {
-      animation: flashUpdateGlow 1s ease;
+      animation: flashUpdateGlow 1.4s ease;
     }
 
     .flash-log {
@@ -48,17 +96,18 @@ function injectGlowStyles() {
 
     @keyframes flashUpdateGlow {
       0% {
-        box-shadow: 0 0 0 rgba(59, 130, 246, 0);
-        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(73, 162, 255, 0);
+        background: #0d1626;
       }
-      20% {
-        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18),
-                    0 0 18px rgba(59, 130, 246, 0.35);
-        transform: scale(1.01);
+      18% {
+        box-shadow: 0 0 0 4px rgba(73, 162, 255, 0.6),
+                    0 0 32px rgba(73, 162, 255, 0.4),
+                    inset 0 0 16px rgba(73, 162, 255, 0.1);
+        background: rgba(73, 162, 255, 0.09);
       }
       100% {
-        box-shadow: 0 0 0 rgba(59, 130, 246, 0);
-        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(73, 162, 255, 0);
+        background: #0d1626;
       }
     }
 
@@ -86,9 +135,59 @@ function flashElement(el, className = "flash-update") {
 
   setTimeout(() => {
     el.classList.remove(className);
-  }, 1100);
+  }, 1500);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function normalizeStatus(status) {
+  return String(status || "Unknown").trim();
+}
+
+function statusClass(status) {
+  const normalized = normalizeStatus(status).toLowerCase();
+  if (normalized.includes("active") || normalized.includes("running")) return "active";
+  if (normalized.includes("idle")) return "idle";
+  if (normalized.includes("charging")) return "charging";
+  if (normalized.includes("delay")) return "delayed";
+  if (normalized.includes("error") || normalized.includes("stop")) return "error";
+  return "idle";
+}
+
+function getCombinedAmrs() {
+  return [...backendAmrs, ...demoAmrs];
+}
+
+function updateFleetSummary(items) {
+  const amrs = Array.isArray(items) ? items : [];
+  const active = amrs.filter((amr) => {
+    const cls = statusClass(amr.status);
+    return cls === "active";
+  }).length;
+
+  const delayed = amrs.filter((amr) => {
+    const cls = statusClass(amr.status);
+    return cls === "delayed" || cls === "error";
+  }).length;
+
+  const idle = amrs.filter((amr) => {
+    const cls = statusClass(amr.status);
+    return cls === "idle" || cls === "charging";
+  }).length;
+
+  if (fleetActiveCount) fleetActiveCount.textContent = String(active);
+  if (fleetDelayedCount) fleetDelayedCount.textContent = String(delayed);
+  if (fleetIdleCount) fleetIdleCount.textContent = String(idle);
+  if (fleetMissionCount) fleetMissionCount.textContent = String(amrs.length);
+  if (fleetTotalBadge) fleetTotalBadge.textContent = `${amrs.length} Units`;
+}
 
 function setStatus(status, text) {
   statusBadge.textContent = status || "idle";
@@ -98,9 +197,22 @@ function setStatus(status, text) {
 
 function setConnectionStatus(state) {
   if (!connectionBadge) return;
-  connectionBadge.textContent = state;
-  const normalized = (state || "").toLowerCase();
+  const normalized = (state || "disconnected").toLowerCase();
+
+  connectionBadge.textContent = normalized;
   connectionBadge.className = `badge connection ${normalized}`;
+
+  if (liveDot) {
+    liveDot.classList.remove("live", "reconnecting", "offline");
+
+    if (normalized === "live") {
+      liveDot.classList.add("live");
+    } else if (normalized === "connecting") {
+      liveDot.classList.add("reconnecting");
+    } else {
+      liveDot.classList.add("offline");
+    }
+  }
 }
 
 function formatLogLine(entry) {
@@ -114,10 +226,7 @@ function updateLogMeta() {
 }
 
 function renderLogs(logs) {
-  visibleLogEntries = [...(logs || [])]
-    .slice(-MAX_VISIBLE_LOGS)
-    .reverse();
-
+  visibleLogEntries = [...(logs || [])].slice(-MAX_VISIBLE_LOGS).reverse();
   logBox.textContent = visibleLogEntries.map(formatLogLine).join("\n");
   logBox.scrollTop = 0;
   updateLogMeta();
@@ -137,10 +246,7 @@ function prependLog(entry) {
 }
 
 function renderStructuredOutput(data, shouldFlash = false) {
-  const nextText = data
-    ? JSON.stringify(data, null, 2)
-    : "No structured output yet.";
-
+  const nextText = data ? JSON.stringify(data, null, 2) : "No structured output yet.";
   const changed = structuredBox.textContent !== nextText;
   structuredBox.textContent = nextText;
 
@@ -160,10 +266,72 @@ function updateResponseBox(text, shouldFlash = false) {
   }
 }
 
-function renderAmrs(amrs) {
+function setSystemAnalysisAwaiting() {
+  if (sysAmrCount) {
+    sysAmrCount.textContent = "Awaiting Detection";
+    sysAmrCount.className = "sysStatValue awaiting";
+  }
+  if (sysCongestionStatus) {
+    sysCongestionStatus.textContent = "Awaiting Detection";
+    sysCongestionStatus.className = "sysStatValue awaiting";
+  }
+  if (sysReasonBox) sysReasonBox.textContent = "System analysis will begin with the next sampled frame...";
+  if (congestionAlert) congestionAlert.style.display = "none";
+}
+
+function updateSystemAnalysis(data, shouldFlash = false) {
+  if (!data) {
+    if (sysAmrCount) {
+      sysAmrCount.textContent = "Offline";
+      sysAmrCount.className = "sysStatValue offline";
+    }
+    if (sysCongestionStatus) {
+      sysCongestionStatus.textContent = "Offline";
+      sysCongestionStatus.className = "sysStatValue offline";
+    }
+    if (sysReasonBox) sysReasonBox.textContent = "Start RTSP analysis to enable system monitoring.";
+    if (congestionAlert) congestionAlert.style.display = "none";
+    return;
+  }
+
+  const amrCount = data.amr_count ?? 0;
+  const congestion = !!data.congestion;
+  const reason = data.reason || "No details available.";
+
+  if (sysAmrCount) {
+    sysAmrCount.textContent = amrCount > 0 ? "AMR Detected" : "No AMR Seen";
+    sysAmrCount.className = `sysStatValue ${amrCount > 0 ? "detected" : "none"}`;
+  }
+
+  if (sysCongestionStatus) {
+    sysCongestionStatus.textContent = congestion ? "Congestion Detected" : "No Congestion";
+    sysCongestionStatus.className = `sysStatValue ${congestion ? "congested" : "clear"}`;
+  }
+
+  if (sysReasonBox) sysReasonBox.textContent = reason;
+
+  if (congestionAlert) {
+    if (congestion) {
+      congestionAlert.style.display = "flex";
+      if (congestionAlertText) congestionAlertText.textContent = `Congestion detected: ${reason}`;
+    } else {
+      congestionAlert.style.display = "none";
+    }
+  }
+
+  if (shouldFlash) {
+    flashElement(sysReasonBox);
+    if (sysAmrCount) flashElement(sysAmrCount.closest(".sysStatCard"));
+    if (sysCongestionStatus) flashElement(sysCongestionStatus.closest(".sysStatCard"));
+  }
+}
+
+function renderAmrs() {
   if (!amrList) return;
 
-  const items = Array.isArray(amrs) ? amrs : [];
+  const items = getCombinedAmrs();
+
+  updateFleetSummary(items);
 
   if (!items.length) {
     amrList.innerHTML = `
@@ -174,37 +342,123 @@ function renderAmrs(amrs) {
     return;
   }
 
-  amrList.innerHTML = items.map((amr) => {
-    const id = amr.id || "Unknown";
-    const status = amr.status || "Unknown";
-    const mission = amr.mission || "No mission data";
-    const location = amr.location || "Unknown location";
+  amrList.innerHTML = items.map((amr, index) => {
+    const id = escapeHtml(amr.id || "Unknown");
+    const status = normalizeStatus(amr.status || "Unknown");
+    const location = escapeHtml(amr.location || "Unknown location");
+    const mission = escapeHtml(amr.mission || "No mission data");
+    const battery = amr.battery ?? "—";
+    const source = amr.source || "backend";
+    const cardStatusClass = statusClass(status);
 
     return `
       <div class="amrCard">
         <div class="amrCardTop">
           <div>
             <div class="amrTitle">${id}</div>
-            <div class="amrMeta">${location}</div>
+            <div class="amrMeta">${location} • ${source === "demo" ? "Demo Unit" : "Detected Unit"}</div>
           </div>
-          <div class="amrStatus ${String(status).toLowerCase()}">${status}</div>
+          <div class="amrStatus ${cardStatusClass}">${escapeHtml(status)}</div>
         </div>
 
         <div class="amrMission">${mission}</div>
 
+        <div class="amrDetails">
+          <div class="amrDetailBox">
+            <div class="amrDetailLabel">Battery</div>
+            <div class="amrDetailValue">${escapeHtml(battery)}%</div>
+          </div>
+          <div class="amrDetailBox">
+            <div class="amrDetailLabel">Mission Source</div>
+            <div class="amrDetailValue">${source === "demo" ? "Manual Demo" : "Backend Feed"}</div>
+          </div>
+        </div>
+
         <div class="amrActions">
-          <button class="secondary stopMissionBtn" data-amr-id="${id}">
-            Stop Mission
+          <button class="secondary stopMissionBtn" data-amr-id="${id}" data-source="${source}">
+            Stop
+          </button>
+          <button class="secondary amrEditBtn" data-index="${index}" data-source="${source}">
+            Edit
+          </button>
+          <button class="secondary amrDeleteBtn" data-index="${index}" data-source="${source}">
+            Delete
           </button>
         </div>
       </div>
     `;
   }).join("");
 
+  wireAmrButtons();
+}
+
+function wireAmrButtons() {
   document.querySelectorAll(".stopMissionBtn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const amrId = btn.dataset.amrId;
+      const source = btn.dataset.source;
+
+      if (source === "demo") {
+        demoAmrs = demoAmrs.map((amr) =>
+          amr.id === amrId
+            ? { ...amr, status: "Stopped", mission: "Mission manually aborted from demo panel" }
+            : amr
+        );
+        renderAmrs();
+        return;
+      }
+
       await stopMission(amrId);
+    });
+  });
+
+  document.querySelectorAll(".amrDeleteBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const source = btn.dataset.source;
+      const index = Number(btn.dataset.index);
+
+      if (source === "demo") {
+        const demoIndex = index - backendAmrs.length;
+        if (demoIndex >= 0) {
+          demoAmrs.splice(demoIndex, 1);
+          renderAmrs();
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll(".amrEditBtn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const source = btn.dataset.source;
+      const index = Number(btn.dataset.index);
+
+      if (source !== "demo") return;
+
+      const demoIndex = index - backendAmrs.length;
+      const amr = demoAmrs[demoIndex];
+      if (!amr) return;
+
+      const newMission = window.prompt("Update Mission", amr.mission || "");
+      if (newMission === null) return;
+
+      const newLocation = window.prompt("Update Location / Zone", amr.location || "");
+      if (newLocation === null) return;
+
+      const newStatus = window.prompt("Update Status", amr.status || "");
+      if (newStatus === null) return;
+
+      const newBattery = window.prompt("Update Battery %", String(amr.battery ?? 100));
+      if (newBattery === null) return;
+
+      demoAmrs[demoIndex] = {
+        ...amr,
+        mission: newMission.trim() || amr.mission,
+        location: newLocation.trim() || amr.location,
+        status: newStatus.trim() || amr.status,
+        battery: Number(newBattery) >= 0 ? Number(newBattery) : amr.battery
+      };
+
+      renderAmrs();
     });
   });
 }
@@ -251,8 +505,10 @@ async function loadState() {
 
   setStatus(data.status || "idle", data.status_text || "System idle.");
   renderLogs(data.logs || []);
-  renderAmrs(data.active_amrs || []);
+  backendAmrs = Array.isArray(data.active_amrs) ? data.active_amrs.map((amr) => ({ ...amr, source: "backend" })) : [];
+  renderAmrs();
   updateVideoFeed(data.rtsp_url || "");
+  updateSystemAnalysis(data.latest_system_analysis || null);
 }
 
 async function startAnalysis() {
@@ -284,6 +540,7 @@ async function startAnalysis() {
       return;
     }
 
+    setSystemAnalysisAwaiting();
     updateVideoFeed(payload.rtsp_url);
   } catch (err) {
     lastError.textContent = err.message || "Failed to start analysis.";
@@ -337,9 +594,51 @@ async function stopAllMissions() {
     if (!data.ok) {
       lastError.textContent = data.error || "Failed to stop all missions.";
     }
+
+    demoAmrs = demoAmrs.map((amr) => ({
+      ...amr,
+      status: "Stopped",
+      mission: "Mission manually aborted from global control"
+    }));
+    renderAmrs();
   } catch (err) {
     lastError.textContent = err.message || "Failed to stop all missions.";
   }
+}
+
+function addDemoAmr() {
+  const id = demoAmrId.value.trim();
+  const missionId = demoMissionId.value.trim();
+  const status = demoAmrStatus.value.trim();
+  const location = demoAmrLocation.value.trim() || "Unassigned Zone";
+  const battery = Number(demoAmrBattery.value || 100);
+
+  if (!id || !missionId) {
+    window.alert("Please enter both AMR ID and Mission ID.");
+    return;
+  }
+
+  demoAmrs.unshift({
+    id,
+    status,
+    mission: `Mission ${missionId} • Demo task assignment`,
+    location,
+    battery,
+    source: "demo"
+  });
+
+  demoAmrId.value = "";
+  demoMissionId.value = "";
+  demoAmrLocation.value = "";
+  demoAmrBattery.value = "";
+  demoAmrStatus.value = "Active";
+
+  renderAmrs();
+}
+
+function clearDemoAmrs() {
+  demoAmrs = [];
+  renderAmrs();
 }
 
 function handleSocketMessage(msg) {
@@ -353,8 +652,10 @@ function handleSocketMessage(msg) {
 
     setStatus(msg.status || "idle", msg.status_text || "System idle.");
     renderLogs(msg.logs || []);
-    renderAmrs(msg.active_amrs || []);
+    backendAmrs = Array.isArray(msg.active_amrs) ? msg.active_amrs.map((amr) => ({ ...amr, source: "backend" })) : [];
+    renderAmrs();
     updateVideoFeed(msg.rtsp_url || "");
+    updateSystemAnalysis(msg.latest_system_analysis || null);
     return;
   }
 
@@ -388,12 +689,19 @@ function handleSocketMessage(msg) {
   }
 
   if (msg.type === "amrs") {
-    renderAmrs(msg.active_amrs || []);
+    backendAmrs = Array.isArray(msg.active_amrs) ? msg.active_amrs.map((amr) => ({ ...amr, source: "backend" })) : [];
+    renderAmrs();
     return;
   }
 
   if (msg.type === "video") {
     updateVideoFeed(msg.rtsp_url || rtspUrl.value || "");
+    return;
+  }
+
+  if (msg.type === "system_analysis") {
+    updateSystemAnalysis(msg.data, true);
+    return;
   }
 }
 
@@ -428,8 +736,6 @@ function connectEvents() {
   };
 }
 
-
-
 startBtn.addEventListener("click", startAnalysis);
 stopBtn.addEventListener("click", stopAnalysis);
 
@@ -437,5 +743,14 @@ if (globalStopMissionBtn) {
   globalStopMissionBtn.addEventListener("click", stopAllMissions);
 }
 
+if (addDemoAmrBtn) {
+  addDemoAmrBtn.addEventListener("click", addDemoAmr);
+}
+
+if (clearDemoAmrsBtn) {
+  clearDemoAmrsBtn.addEventListener("click", clearDemoAmrs);
+}
+
 loadState();
+renderAmrs();
 connectEvents();

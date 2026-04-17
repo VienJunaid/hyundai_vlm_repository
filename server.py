@@ -34,6 +34,7 @@ state = {
     "structured_output": False,
     "latest_response": "",
     "latest_structured": None,
+    "latest_system_analysis": None,
     "last_update": None,
     "last_error": None,
     "cpu_percent": 0.0,
@@ -114,6 +115,14 @@ def handle_status(payload: dict):
     })
 
 
+def handle_system_result(payload: dict):
+    state["latest_system_analysis"] = payload
+    push_broadcast({
+        "type": "system_analysis",
+        "data": payload,
+    })
+
+
 def handle_error(message: str):
     state["last_error"] = message
     state["status"] = "error"
@@ -141,6 +150,7 @@ worker = RTSPAnalysisWorker(
     on_error=handle_error,
     on_log=add_log,
     on_frame=handle_frame,
+    on_system_result=handle_system_result,
 )
 
 
@@ -307,5 +317,5 @@ def mjpeg_generator():
                 b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
             )
 
-        time.sleep(0.08)
+        time.sleep(0.033)
 
