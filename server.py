@@ -14,6 +14,7 @@ import time
 
 from ollama_client import OllamaVisionClient
 from rtsp_worker import RTSPAnalysisWorker, WorkerConfig
+from pallet_worker import PalletStationWorker
 
 app = FastAPI(title="Hyundai Local VLM Dashboard")
 
@@ -121,6 +122,28 @@ def handle_system_result(payload: dict):
         "type": "system_analysis",
         "data": payload,
     })
+
+
+pallet_station_info = [{} for _ in range(3)]
+
+
+def handle_pallet_update(station_id: int, info: dict):
+    pallet_station_info[station_id] = info
+    push_broadcast({
+        "type": "pallet_update",
+        "station": info,
+    })
+
+
+pallet_workers = [
+    PalletStationWorker(
+        station_id=i,
+        ollama_client=ollama,
+        on_update=handle_pallet_update,
+        on_log=add_log,
+    )
+    for i in range(3)
+]
 
 
 def handle_error(message: str):
@@ -237,6 +260,18 @@ async def start_analysis(request: Request):
     return {"ok": True}
 
 
+@app.post("/api/update_prompt")
+async def update_prompt(request: Request):
+    body = await request.json()
+    prompt = body.get("prompt", "").strip()
+    if not prompt:
+        return JSONResponse({"ok": False, "error": "Prompt cannot be empty"}, status_code=400)
+    state["prompt"] = prompt
+    worker.update_prompt(prompt)
+    add_log(f"Prompt updated live: {prompt[:80]}")
+    return {"ok": True}
+
+
 @app.post("/api/stop")
 async def stop_analysis():
     worker.stop()
@@ -264,6 +299,7 @@ async def ws_events(websocket: WebSocket):
         "type": "state",
         **state,
         "logs": list(logs),
+        "pallet_stations": [w.get_info() for w in pallet_workers],
     })
 
     try:
@@ -318,4 +354,49 @@ def mjpeg_generator():
             )
 
         time.sleep(0.033)
+
+
+@app.get("/api/pallet/state")
+async def get_pallet_state():
+    return {"stations": [w.get_info() for w in pallet_workers]}
+
+
+@app.post("/api/pallet/configure")
+async def pallet_configure(request: Request):
+    body = await request.json()
+    urls = body.get("urls", ["", "", ""])
+    model = body.get("model", state["model"])
+
+    for i in range(3):
+        url = (urls[i] if i < len(urls) else "").strip()
+        pallet_workers[i].configure(url, model)
+        add_log(f"Pallet Station {i + 1}: configured — URL={'set' if url else 'cleared'}, model={model}")
+
+    return {"ok": True}
+
+
+@app.get("/api/pallet/stream/{station_id}")
+async def pallet_stream(station_id: int):
+    if station_id < 0 or station_id >= 3:
+        return JSONResponse({"ok": False, "error": "Invalid station ID"}, status_code=400)
+
+    w = pallet_workers[station_id]
+    if w.get_latest_frame() is None:
+        return JSONResponse(
+            {"ok": False, "error": f"No frame yet for station {station_id + 1}. Is the RTSP URL configured?"},
+            status_code=503,
+        )
+
+    return StreamingResponse(
+        _pallet_mjpeg(w),
+        media_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+def _pallet_mjpeg(worker):
+    while True:
+        frame = worker.get_latest_frame()
+        if frame:
+            yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
+        time.sleep(0.05)
 

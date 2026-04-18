@@ -64,6 +64,10 @@ class RTSPAnalysisWorker:
         self._stop_event.set()
         self._running = False
 
+    def update_prompt(self, prompt: str):
+        if self._config is not None:
+            self._config.prompt = prompt
+
     def _run_inference(self, cfg: WorkerConfig, image_bytes: bytes):
         try:
             self.on_log(f"Sending frame to Ollama model: {cfg.model}")

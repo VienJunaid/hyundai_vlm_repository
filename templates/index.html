@@ -10,7 +10,7 @@
   <header class="header">
     <div>
       <h1>Hyundai Local VLM Dashboard</h1>
-      <p class="subtitle">Phase 2 • RTSP + Ollama + Metrics + Logs + Structured Output</p>
+      <p class="subtitle">Phase 3 • RTSP + VLM + Pallet Alignment + Metrics + Logs</p>
 
       <div class="connectionRow">
         <span id="liveDot" class="liveDot offline"></span>
@@ -31,6 +31,7 @@
 
       <label>Prompt</label>
       <textarea id="promptInput">Analyze this factory scene. Focus on AMR congestion, pallet blockage, worker presence, and operational hazards. Keep the answer concise.</textarea>
+      <button id="applyPromptBtn" class="secondary" style="margin-top:6px;">Apply Prompt (live)</button>
 
       <label>Model</label>
       <select id="modelSelect">
@@ -122,71 +123,120 @@
       <div id="logBox" class="logBox"></div>
     </section>
 
-    <aside class="panel fleetPanel">
-      <div class="fleetHeaderRow">
+    <aside class="panel palletPanel">
+      <div class="palletPanelHeader">
         <div>
-          <h2>AMR Fleet Operations</h2>
-          <div class="fleetSubtext">Demo control panel for active units and missions</div>
-        </div>
-        <div class="fleetBadge" id="fleetTotalBadge">0 Units</div>
-      </div>
-
-      <div class="fleetStatsGrid">
-        <div class="fleetStatCard">
-          <div class="fleetStatLabel">Active</div>
-          <div id="fleetActiveCount" class="fleetStatValue">0</div>
-        </div>
-        <div class="fleetStatCard">
-          <div class="fleetStatLabel">Delayed</div>
-          <div id="fleetDelayedCount" class="fleetStatValue">0</div>
-        </div>
-        <div class="fleetStatCard">
-          <div class="fleetStatLabel">Idle / Charging</div>
-          <div id="fleetIdleCount" class="fleetStatValue">0</div>
-        </div>
-        <div class="fleetStatCard">
-          <div class="fleetStatLabel">Missions</div>
-          <div id="fleetMissionCount" class="fleetStatValue">0</div>
+          <h2>Pallet Orientation Check</h2>
+          <div class="palletSubtext">3 docking stations — real-time alignment monitoring</div>
         </div>
       </div>
 
-      <div class="fleetFormCard">
-        <h3>Add Demo AMR</h3>
+      <!-- Camera Configuration -->
+      <div class="palletConfigCard">
+        <h3>Camera Configuration</h3>
 
-        <label>AMR ID</label>
-        <input id="demoAmrId" type="text" placeholder="AMR-07" />
-
-        <label>Mission ID</label>
-        <input id="demoMissionId" type="text" placeholder="M-2041" />
-
-        <label>Status</label>
-        <select id="demoAmrStatus">
-          <option value="Active">Active</option>
-          <option value="Idle">Idle</option>
-          <option value="Charging">Charging</option>
-          <option value="Delayed">Delayed</option>
-          <option value="Error">Error</option>
+        <label>VLM Model</label>
+        <select id="palletModel">
+          <option value="llama3.2-vision:11b">llama3.2-vision:11b</option>
+          <option value="gemma3:4b">gemma3:4b</option>
         </select>
 
-        <label>Zone / Location</label>
-        <input id="demoAmrLocation" type="text" placeholder="Pickup A3" />
+        <label>Station 1 RTSP URL</label>
+        <input id="palletUrl0" type="text" placeholder="rtsp://..." />
 
-        <label>Battery %</label>
-        <input id="demoAmrBattery" type="number" min="0" max="100" placeholder="84" />
+        <label>Station 2 RTSP URL</label>
+        <input id="palletUrl1" type="text" placeholder="rtsp://..." />
 
-        <div class="fleetFormButtons">
-          <button id="addDemoAmrBtn" class="primary">Add AMR</button>
-          <button id="clearDemoAmrsBtn" class="secondary">Clear Demo</button>
+        <label>Station 3 RTSP URL</label>
+        <input id="palletUrl2" type="text" placeholder="rtsp://..." />
+
+        <button id="palletConfigureBtn" class="primary" style="margin-top:12px;">
+          Configure &amp; Start Monitoring
+        </button>
+      </div>
+
+      <!-- Docking Station 1 -->
+      <div class="stationCard" id="stationCard0">
+        <div class="stationHeader">
+          <div class="stationTitle">Docking Station 1</div>
+          <div class="stationBadge no-amr" id="stationBadge0">No AMR</div>
+        </div>
+        <div class="stationVideoWrap" id="stationVideoWrap0" style="display:none;">
+          <img class="stationVideo" id="stationVideo0" src="" alt="Station 1 feed" />
+        </div>
+        <div class="stationPlaceholder" id="stationPlaceholder0">Camera idle — no AMR detected</div>
+        <div class="stationScanInfo" id="stationScanInfo0" style="display:none;">
+          <div class="stationScanRow">
+            <span class="stationScanLabel">Alignment Scans</span>
+            <span class="stationScanCount" id="stationScanCount0">0 / 10</span>
+          </div>
+          <div class="stationProgress">
+            <div class="stationProgressBar" id="stationProgressBar0" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stationExplanation" id="stationExplanation0"></div>
+        <div class="stationAlert" id="stationAlertMsg0" style="display:none;">
+          &#9888; Alignment failed after 5 scans — manual inspection required
+        </div>
+        <div class="stationSuccess" id="stationSuccessMsg0" style="display:none;">
+          &#10003; Aligned — AMR cleared for loading procedures
         </div>
       </div>
 
-      <div class="fleetListHeader">
-        <h3>Active Units</h3>
-        <div class="fleetMetaText">Add, edit, delete, or stop for show</div>
+      <!-- Docking Station 2 -->
+      <div class="stationCard" id="stationCard1">
+        <div class="stationHeader">
+          <div class="stationTitle">Docking Station 2</div>
+          <div class="stationBadge no-amr" id="stationBadge1">No AMR</div>
+        </div>
+        <div class="stationVideoWrap" id="stationVideoWrap1" style="display:none;">
+          <img class="stationVideo" id="stationVideo1" src="" alt="Station 2 feed" />
+        </div>
+        <div class="stationPlaceholder" id="stationPlaceholder1">Camera idle — no AMR detected</div>
+        <div class="stationScanInfo" id="stationScanInfo1" style="display:none;">
+          <div class="stationScanRow">
+            <span class="stationScanLabel">Alignment Scans</span>
+            <span class="stationScanCount" id="stationScanCount1">0 / 10</span>
+          </div>
+          <div class="stationProgress">
+            <div class="stationProgressBar" id="stationProgressBar1" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stationExplanation" id="stationExplanation1"></div>
+        <div class="stationAlert" id="stationAlertMsg1" style="display:none;">
+          &#9888; Alignment failed after 5 scans — manual inspection required
+        </div>
+        <div class="stationSuccess" id="stationSuccessMsg1" style="display:none;">
+          &#10003; Aligned — AMR cleared for loading procedures
+        </div>
       </div>
 
-      <div id="amrList" class="amrList">
-        <div class="amrEmpty">No active AMRs detected.</div>
+      <!-- Docking Station 3 -->
+      <div class="stationCard" id="stationCard2">
+        <div class="stationHeader">
+          <div class="stationTitle">Docking Station 3</div>
+          <div class="stationBadge no-amr" id="stationBadge2">No AMR</div>
+        </div>
+        <div class="stationVideoWrap" id="stationVideoWrap2" style="display:none;">
+          <img class="stationVideo" id="stationVideo2" src="" alt="Station 3 feed" />
+        </div>
+        <div class="stationPlaceholder" id="stationPlaceholder2">Camera idle — no AMR detected</div>
+        <div class="stationScanInfo" id="stationScanInfo2" style="display:none;">
+          <div class="stationScanRow">
+            <span class="stationScanLabel">Alignment Scans</span>
+            <span class="stationScanCount" id="stationScanCount2">0 / 10</span>
+          </div>
+          <div class="stationProgress">
+            <div class="stationProgressBar" id="stationProgressBar2" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="stationExplanation" id="stationExplanation2"></div>
+        <div class="stationAlert" id="stationAlertMsg2" style="display:none;">
+          &#9888; Alignment failed after 5 scans — manual inspection required
+        </div>
+        <div class="stationSuccess" id="stationSuccessMsg2" style="display:none;">
+          &#10003; Aligned — AMR cleared for loading procedures
+        </div>
       </div>
     </aside>
   </main>

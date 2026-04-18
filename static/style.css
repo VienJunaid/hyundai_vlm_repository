@@ -199,11 +199,7 @@ button.danger {
 .responseBox,
 .structuredBox,
 .logBox,
-.videoPanel,
-.fleetFormCard,
-.fleetStatCard,
-.amrCard,
-.amrEmpty {
+.videoPanel {
   padding: 14px;
   background: var(--panel3);
   border: 1px solid var(--border);
@@ -293,7 +289,13 @@ button.danger {
   min-height: 220px;
 }
 
-.fleetHeaderRow {
+/* ── Pallet Panel ────────────────────────────────────────────────────────── */
+
+.palletPanel {
+  min-width: 0;
+}
+
+.palletPanelHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -301,197 +303,200 @@ button.danger {
   margin-bottom: 14px;
 }
 
-.fleetHeaderRow h2 {
+.palletPanelHeader h2 {
   margin: 0;
 }
 
-.fleetSubtext {
+.palletSubtext {
   margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
 }
 
-.fleetBadge {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: var(--secondary);
+.palletConfigCard {
+  background: var(--panel3);
   border: 1px solid var(--border);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.fleetStatsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  border-radius: 12px;
+  padding: 14px;
   margin-bottom: 14px;
 }
 
-.fleetStatCard {
-  padding: 12px;
-}
-
-.fleetStatLabel {
-  color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 6px;
-}
-
-.fleetStatValue {
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.fleetFormCard {
-  margin-bottom: 14px;
-}
-
-.fleetFormCard h3,
-.fleetListHeader h3 {
+.palletConfigCard h3 {
   margin: 0 0 10px;
 }
 
-.fleetFormButtons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 14px;
+/* ── Docking Station Cards ───────────────────────────────────────────────── */
+
+.stationCard {
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: border-color 0.3s ease;
 }
 
-.fleetListHeader {
+.stationCard:last-child {
+  margin-bottom: 0;
+}
+
+.stationHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
   margin-bottom: 10px;
 }
 
-.fleetMetaText {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.amrList {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 820px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.amrCard {
-  padding: 12px;
-}
-
-.amrCardTop {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.amrTitle {
-  font-size: 16px;
+.stationTitle {
+  font-size: 15px;
   font-weight: 700;
 }
 
-.amrMeta {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.amrStatus {
-  padding: 6px 10px;
+.stationBadge {
+  padding: 5px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  text-transform: capitalize;
   border: 1px solid var(--border);
   white-space: nowrap;
 }
 
-.amrStatus.active {
-  background: rgba(31, 157, 116, 0.18);
-  color: #8ef0c9;
+.stationBadge.no-amr {
+  background: rgba(120, 130, 150, 0.15);
+  color: var(--muted);
 }
 
-.amrStatus.idle {
-  background: rgba(120, 130, 150, 0.18);
-  color: #d1d8e6;
-}
-
-.amrStatus.charging {
+.stationBadge.amr-detected {
   background: rgba(208, 138, 45, 0.18);
   color: #ffd697;
 }
 
-.amrStatus.delayed {
-  background: rgba(184, 106, 45, 0.18);
-  color: #ffc89b;
+.stationBadge.scanning {
+  background: rgba(45, 143, 194, 0.18);
+  color: #8dd4f7;
+  animation: pulseScan 1.2s ease-in-out infinite;
 }
 
-.amrStatus.error,
-.amrStatus.stopped {
-  background: rgba(201, 75, 75, 0.18);
+.stationBadge.aligned {
+  background: rgba(31, 157, 116, 0.2);
+  color: #8ef0c9;
+}
+
+.stationBadge.misaligned-alert {
+  background: rgba(201, 75, 75, 0.2);
   color: #ffb1b1;
+  animation: pulseAlert 1.4s ease-in-out infinite;
 }
 
-.amrMission {
+@keyframes pulseScan {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+@keyframes pulseAlert {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(201,75,75,0); }
+  50%       { opacity: 0.7; box-shadow: 0 0 8px 2px rgba(201,75,75,0.35); }
+}
+
+.stationVideoWrap {
   margin-bottom: 10px;
-  line-height: 1.45;
-}
-
-.amrDetails {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.amrDetailBox {
-  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px;
+  background: #000;
 }
 
-.amrDetailLabel {
+.stationVideo {
+  width: 100%;
+  display: block;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.stationPlaceholder {
   color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.amrDetailValue {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.amrActions {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-}
-
-.amrActions button {
-  padding: 10px;
-}
-
-.amrEditBtn {
-  background: #2c4363;
-}
-
-.amrDeleteBtn {
-  background: #4d2a2a;
-}
-
-.amrEmpty {
+  font-size: 13px;
   text-align: center;
+  padding: 14px 0 10px;
+}
+
+.stationScanInfo {
+  margin: 8px 0;
+}
+
+.stationScanRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.stationScanLabel {
+  font-size: 12px;
   color: var(--muted);
+}
+
+.stationScanCount {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stationProgress {
+  height: 6px;
+  background: var(--secondary);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.stationProgressBar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.stationProgressBar.bar-aligned {
+  background: var(--success);
+}
+
+.stationProgressBar.bar-alert {
+  background: var(--danger);
+}
+
+.stationExplanation {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.stationAlert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(201, 75, 75, 0.13);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffb1b1;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.stationSuccess {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(31, 157, 116, 0.13);
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #8ef0c9;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
 }
 
 .congestionAlert {
@@ -580,11 +585,7 @@ button.danger {
 
 @media (max-width: 700px) {
   .statsGrid,
-  .fleetStatsGrid,
-  .amrDetails,
-  .fleetFormButtons,
-  .buttonRow,
-  .amrActions {
+  .buttonRow {
     grid-template-columns: 1fr;
   }
 

@@ -5,6 +5,23 @@ from typing import Optional, Tuple
 
 import requests
 
+AMR_PRESENCE_PROMPT = (
+    "Is there a blue AMR (Autonomous Mobile Robot) visible in this image? "
+    "The AMR is a large blue robotic vehicle on wheels used for material transport in factories. "
+    "Answer with ONLY the single word YES or NO."
+)
+
+PALLET_ALIGNMENT_PROMPT = (
+    "You are inspecting a pallet docking zone. Look for two yellow rectangular marker bars: "
+    "one on the bottom front edge of the payload (grey or dark box above), "
+    "and one on the top front edge of the AMR (blue vehicle below). "
+    "Are these two yellow markers horizontally aligned with each other — meaning they line up "
+    "at the same horizontal position when viewed from the front camera? "
+    "Answer using ONLY this exact format: "
+    "ALIGNED: <one sentence explanation> "
+    "or MISALIGNED: <one sentence explanation>."
+)
+
 SYSTEM_ANALYSIS_PROMPT = (
     "You are a factory floor safety monitor. Analyze this image carefully. "
     "Respond ONLY with valid JSON and no other text, using this exact format: "
@@ -88,6 +105,19 @@ class OllamaVisionClient:
             except Exception:
                 pass
         return {"amr_count": 0, "congestion": False, "reason": text}
+
+    def check_amr_presence(self, model: str, image_bytes: bytes) -> bool:
+        """Returns True if a blue AMR robot is visible in the image."""
+        text, _ = self.analyze_image(model, AMR_PRESENCE_PROMPT, image_bytes)
+        return text.strip().upper().startswith("YES")
+
+    def check_pallet_alignment(self, model: str, image_bytes: bytes) -> dict:
+        """Returns {'aligned': bool, 'explanation': str}."""
+        text, _ = self.analyze_image(model, PALLET_ALIGNMENT_PROMPT, image_bytes)
+        text = text.strip()
+        aligned = text.upper().startswith("ALIGNED")
+        explanation = text.split(":", 1)[1].strip() if ":" in text else text
+        return {"aligned": aligned, "explanation": explanation}
 
     def health_check(self) -> Optional[dict]:
         try:
