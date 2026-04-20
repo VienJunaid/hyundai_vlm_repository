@@ -181,6 +181,7 @@ class PalletStationWorker:
                 continue
 
             cap = cv2.VideoCapture(self.rtsp_url)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             if not cap.isOpened():
                 self._on_log(f"{label}: Cannot open stream, retrying in 5s...")
                 self._set_state(NO_AMR, "Camera unavailable")
@@ -205,16 +206,16 @@ class PalletStationWorker:
                     if not ret:
                         break
 
-                    small = self._resize(frame.copy(), 480)
+                    small = self._resize(frame.copy(), 320)
                     with self._frame_lock:
-                        self._latest_frame = self._encode(small, 35)
+                        self._latest_frame = self._encode(small, 25)
 
                     now = time.time()
 
                     if self._state == NO_AMR:
                         if now - last_detection >= DETECTION_INTERVAL:
                             last_detection = now
-                            img = self._encode(self._resize(frame.copy(), 480), 60)
+                            img = self._encode(self._resize(frame.copy(), 640), 80)
                             self._dispatch(self._do_presence_check, img, False)
 
                     elif self._state == AMR_DETECTED:
@@ -232,7 +233,7 @@ class PalletStationWorker:
                     elif self._state in (ALIGNED, MISALIGNED_ALERT):
                         if now - last_depart_check >= DEPART_CHECK_INTERVAL:
                             last_depart_check = now
-                            img = self._encode(self._resize(frame.copy(), 480), 60)
+                            img = self._encode(self._resize(frame.copy(), 640), 80)
                             self._dispatch(self._do_presence_check, img, True)
 
                     time.sleep(0.05)

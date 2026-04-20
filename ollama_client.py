@@ -6,28 +6,43 @@ from typing import Optional, Tuple
 import requests
 
 AMR_PRESENCE_PROMPT = (
-    "Is there a blue AMR (Autonomous Mobile Robot) visible in this image? "
-    "The AMR is a large blue robotic vehicle on wheels used for material transport in factories. "
+    "Look carefully at this factory floor image. "
+    "Is there a large blue rectangular platform or vehicle (an AMR — Autonomous Mobile Robot) visible? "
+    "The AMR looks like a solid blue box or sled shape, low to the ground, "
+    "and may have small yellow square stickers or markers on its top surface. "
+    "It is typically positioned in front of a docking bay with grey walls on the sides. "
     "Answer with ONLY the single word YES or NO."
 )
 
 PALLET_ALIGNMENT_PROMPT = (
-    "You are inspecting a pallet docking zone. Look for two yellow rectangular marker bars: "
-    "one on the bottom front edge of the payload (grey or dark box above), "
-    "and one on the top front edge of the AMR (blue vehicle below). "
-    "Are these two yellow markers horizontally aligned with each other — meaning they line up "
-    "at the same horizontal position when viewed from the front camera? "
-    "Answer using ONLY this exact format: "
-    "ALIGNED: <one sentence explanation> "
-    "or MISALIGNED: <one sentence explanation>."
+    "You are checking docking alignment between an AMR and its payload in a factory. "
+    "In this front-facing camera image, look for two bright yellow square markers: "
+    "one yellow square is on the top surface of the blue AMR (the large blue rectangular platform at the bottom), "
+    "and one yellow square is on the bottom surface of the payload or docking structure directly above the AMR. "
+    "These two yellow squares must line up at the same horizontal left-right position. "
+    "If both yellow squares appear directly above each other with no left or right offset, they are ALIGNED. "
+    "If one yellow square is shifted left or right compared to the other, they are MISALIGNED. "
+    "Answer using ONLY this exact format — no other text: "
+    "ALIGNED: <one sentence describing what you see> "
+    "or MISALIGNED: <one sentence describing the offset you see>."
 )
 
 SYSTEM_ANALYSIS_PROMPT = (
-    "You are a factory floor safety monitor. Analyze this image carefully. "
+    "You are a factory floor safety monitor analyzing a Hyundai AMR facility. "
     "Respond ONLY with valid JSON and no other text, using this exact format: "
     "{\"amr_count\": 0, \"congestion\": false, \"reason\": \"brief one-sentence explanation\"}. "
-    "Count all AMRs, forklifts, or automated vehicles visible. "
-    "Set congestion to true if any vehicles appear blocked, clustered together, or unable to move freely."
+    "ABOUT THE AMRs: AMRs are flat blue rectangular sleds or platforms on the floor, "
+    "often with a small yellow square marker on top. Count every blue flat platform as one AMR. "
+    "Do NOT call them pallets. "
+    "ABOUT THE FLOOR MARKINGS: The factory floor has solid lines that mark zone boundaries "
+    "and dotted lines that mark the exit boundary of each AMR docking station. "
+    "CONGESTION RULE — flag congestion as true in EITHER of these cases: "
+    "1) Any AMR that has clearly crossed past the dotted line into the open travel lane "
+    "appears stopped or stuck — AMRs in the open travel lane must ALWAYS be moving. "
+    "2) Three or more AMRs are visible in the open travel lane (past the dotted line) "
+    "and none of them appear to be moving — this is a multi-AMR travel lane blockage. "
+    "An AMR that is stationary inside the docking station area (behind or at the dotted line) "
+    "is normal docking behavior — do NOT flag that as congestion."
 )
 
 

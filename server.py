@@ -127,6 +127,7 @@ def handle_system_result(payload: dict):
 pallet_station_info = [{} for _ in range(3)]
 
 
+
 def handle_pallet_update(station_id: int, info: dict):
     pallet_station_info[station_id] = info
     push_broadcast({
@@ -398,5 +399,5 @@ def _pallet_mjpeg(worker):
         frame = worker.get_latest_frame()
         if frame:
             yield b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n"
-        time.sleep(0.05)
+        time.sleep(0.067)
 

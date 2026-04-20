@@ -28,6 +28,7 @@ const videoPlaceholder = document.getElementById("videoPlaceholder");
 const congestionAlert = document.getElementById("congestionAlert");
 const congestionAlertText = document.getElementById("congestionAlertText");
 const sysAmrCount = document.getElementById("sysAmrCount");
+const sysAmrCountNum = document.getElementById("sysAmrCountNum");
 const sysCongestionStatus = document.getElementById("sysCongestionStatus");
 const sysReasonBox = document.getElementById("sysReasonBox");
 
@@ -41,6 +42,7 @@ const MAX_VISIBLE_LOGS = 80;
 
 // Per-station last-known state (for flash-on-change detection)
 const palletStates = [{}, {}, {}];
+
 
 // ── Glow animations ────────────────────────────────────────────────────────────
 
@@ -169,10 +171,8 @@ function updateResponseBox(text, shouldFlash = false) {
 // ── System analysis ────────────────────────────────────────────────────────────
 
 function setSystemAnalysisAwaiting() {
-  if (sysAmrCount) {
-    sysAmrCount.textContent = "Awaiting Detection";
-    sysAmrCount.className = "sysStatValue awaiting";
-  }
+  if (sysAmrCountNum) { sysAmrCountNum.textContent = "—"; sysAmrCountNum.className = "sysStatValue awaiting"; }
+  if (sysAmrCount) { sysAmrCount.textContent = "Awaiting Detection"; }
   if (sysCongestionStatus) {
     sysCongestionStatus.textContent = "Awaiting Detection";
     sysCongestionStatus.className = "sysStatValue awaiting";
@@ -183,7 +183,8 @@ function setSystemAnalysisAwaiting() {
 
 function updateSystemAnalysis(data, shouldFlash = false) {
   if (!data) {
-    if (sysAmrCount) { sysAmrCount.textContent = "Offline"; sysAmrCount.className = "sysStatValue offline"; }
+    if (sysAmrCountNum) { sysAmrCountNum.textContent = "—"; sysAmrCountNum.className = "sysStatValue offline"; }
+    if (sysAmrCount) { sysAmrCount.textContent = "Offline"; }
     if (sysCongestionStatus) { sysCongestionStatus.textContent = "Offline"; sysCongestionStatus.className = "sysStatValue offline"; }
     if (sysReasonBox) sysReasonBox.textContent = "Start RTSP analysis to enable system monitoring.";
     if (congestionAlert) congestionAlert.style.display = "none";
@@ -194,9 +195,13 @@ function updateSystemAnalysis(data, shouldFlash = false) {
   const congestion = !!data.congestion;
   const reason = data.reason || "No details available.";
 
+  if (sysAmrCountNum) {
+    sysAmrCountNum.textContent = amrCount;
+    sysAmrCountNum.className = `sysStatValue ${amrCount > 0 ? "detected" : "none"}`;
+    sysAmrCountNum.style.fontSize = "32px";
+  }
   if (sysAmrCount) {
-    sysAmrCount.textContent = amrCount > 0 ? "AMR Detected" : "No AMR Seen";
-    sysAmrCount.className = `sysStatValue ${amrCount > 0 ? "detected" : "none"}`;
+    sysAmrCount.textContent = amrCount > 0 ? `AMR${amrCount === 1 ? "" : "s"} Detected` : "No AMR Seen";
   }
   if (sysCongestionStatus) {
     sysCongestionStatus.textContent = congestion ? "Congestion Detected" : "No Congestion";
