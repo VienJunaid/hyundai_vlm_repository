@@ -1,0 +1,615 @@
+:root {
+  --bg: #0c4499;
+  --panel: #1047a7;
+  --panel2: #223344;
+  --panel3: #021122;
+  --text: #e8eefc;
+  --muted: #aab7d1;
+  --border: #ffffff;
+  --primary: #00aaff;
+  --secondary: #667a8d;
+  --success: #1f9d74;
+  --danger: #c94b4b;
+  --warning: #d08a2d;
+  --orange: #b86a2d;
+  --cyan: #5688a3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Archivo Black', Arial, Helvetica, sans-serif;
+  background: linear-gradient(180deg, #1a2b3c 0%, #2c3e50 100%);
+  color: var(--text);
+}
+
+.header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  background-color: rgb(2, 16, 65);
+}
+
+.header h1 {
+  margin: 0 0 6px 0;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.header > div:last-child {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.connectionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.liveDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #6b7280;
+  box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.5);
+}
+
+.liveDot.live {
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
+}
+
+.liveDot.reconnecting {
+  background: #f59e0b;
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.15);
+}
+
+.liveDot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
+}
+
+.badge {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  text-transform: lowercase;
+  font-weight: 700;
+}
+
+.badge.running,
+.badge.connection.live {
+  background: #123a30;
+}
+
+.badge.connecting,
+.badge.starting,
+.badge.connection.connecting {
+  background: #4f3a14;
+}
+
+.badge.error,
+.badge.connection.disconnected {
+  background: #442424;
+}
+
+.badge.idle,
+.badge.stopped {
+  background: #2d3952;
+}
+
+.container {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 520px minmax(0, 1fr) 600px;
+  gap: 18px;
+  align-items: start;
+  background: rgb(2, 16, 65);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.left {
+  min-width: 0;
+}
+
+.centerPanel {
+  min-width: 0;
+}
+
+.fleetPanel {
+  min-width: 0;
+}
+
+label {
+  display: block;
+  margin: 14px 0 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+input,
+textarea,
+select,
+button {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--text);
+  padding: 12px;
+  font-size: 14px;
+}
+
+textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+
+.buttonRow {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.secondButtonRow {
+  margin-top: 10px;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button.primary {
+  background: var(--primary);
+  color: #08111b;
+}
+
+button.secondary {
+  background: var(--secondary);
+}
+
+button.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.statusText,
+.responseBox,
+.structuredBox,
+.logBox,
+.videoPanel {
+  padding: 14px;
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.responseBox {
+  min-height: 110px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.structuredBox {
+  min-height: 140px;
+  white-space: pre-wrap;
+  overflow: auto;
+  font-family: Menlo, Consolas, monospace;
+}
+
+.logHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.logMeta {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.logBox {
+  min-height: 180px;
+  max-height: 280px;
+  overflow: auto;
+  font-family: Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.metaRow {
+  margin-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  gap: 20px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.statCard {
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkboxRow input {
+  width: auto;
+  transform: scale(1.1);
+}
+
+.videoPanel {
+  min-height: 220px;
+}
+
+/* ── Pallet Panel ────────────────────────────────────────────────────────── */
+
+.palletPanel {
+  min-width: 0;
+}
+
+.palletPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.palletPanelHeader h2 {
+  margin: 0;
+}
+
+.palletSubtext {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.palletConfigCard {
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.palletConfigCard h3 {
+  margin: 0 0 10px;
+}
+
+/* ── Docking Station Cards ───────────────────────────────────────────────── */
+
+.stationCard {
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: border-color 0.3s ease;
+}
+
+.stationCard:last-child {
+  margin-bottom: 0;
+}
+
+.stationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.stationTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.stationBadge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.stationBadge.no-amr {
+  background: rgba(120, 130, 150, 0.15);
+  color: var(--muted);
+}
+
+.stationBadge.amr-detected {
+  background: rgba(208, 138, 45, 0.18);
+  color: #ffd697;
+}
+
+.stationBadge.scanning {
+  background: rgba(45, 143, 194, 0.18);
+  color: #8dd4f7;
+  animation: pulseScan 1.2s ease-in-out infinite;
+}
+
+.stationBadge.aligned {
+  background: rgba(31, 157, 116, 0.2);
+  color: #8ef0c9;
+}
+
+.stationBadge.misaligned-alert {
+  background: rgba(201, 75, 75, 0.2);
+  color: #ffb1b1;
+  animation: pulseAlert 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseScan {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+@keyframes pulseAlert {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(201,75,75,0); }
+  50%       { opacity: 0.7; box-shadow: 0 0 8px 2px rgba(201,75,75,0.35); }
+}
+
+.stationVideoWrap {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.stationVideo {
+  width: 100%;
+  display: block;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+.stationPlaceholder {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 14px 0 10px;
+}
+
+.stationScanInfo {
+  margin: 8px 0;
+}
+
+.stationScanRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.stationScanLabel {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.stationScanCount {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stationProgress {
+  height: 6px;
+  background: var(--secondary);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.stationProgressBar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.stationProgressBar.bar-aligned {
+  background: var(--success);
+}
+
+.stationProgressBar.bar-alert {
+  background: var(--danger);
+}
+
+.stationExplanation {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.stationAlert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(201, 75, 75, 0.13);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #ffb1b1;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.stationSuccess {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(31, 157, 116, 0.13);
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #8ef0c9;
+  font-weight: 600;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.congestionAlert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(201, 75, 75, 0.15);
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  color: #ffb1b1;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.congestionAlertIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.systemAnalysisGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sysStatCard {
+  background: var(--panel3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.sysStatLabel {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.sysStatValue {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.sysStatValue.offline {
+  color: var(--muted);
+}
+
+.sysStatValue.awaiting {
+  color: #ffd697;
+}
+
+.sysStatValue.detected {
+  color: #8ef0c9;
+}
+
+.sysStatValue.none {
+  color: var(--muted);
+}
+
+.sysStatValue.congested {
+  color: #ffb1b1;
+}
+
+.sysStatValue.clear {
+  color: #8ef0c9;
+}
+
+.sysAmrStatusText {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.sysReasonBox {
+  min-height: 60px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .amrList {
+    max-height: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .statsGrid,
+  .buttonRow {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+}
